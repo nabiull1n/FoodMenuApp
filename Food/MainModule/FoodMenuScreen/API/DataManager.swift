@@ -13,7 +13,9 @@ protocol FoodMenuDataManagerDelegate: AnyObject {
 
 final class FoodMenuDataManager: FoodMenuDataManagerDelegate {
     func loadData(completion: @escaping ([Dish]) -> Void) {
+        
         FoodMenuRequest.shared.loadFoodCollectionData { result in
+            
             switch result {
                 case .success(let data):
                     completion (data.dishes ?? [])

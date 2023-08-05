@@ -11,16 +11,38 @@ final class MainNetworkRequest {
     static let shared = MainNetworkRequest()
     
     private init() {}
-
+    
     func loadMainTableData (completion: @escaping (Result<CategoriesData, Error>) -> Void) {
-        guard let url = URL(string: "\(Resources.URL.mainNetworkRequestURL)") else { return }
-        let request = URLRequest(url: url)
-        let task = URLSession.shared.dataTask(with: request) { data, _, _ in
-            guard let data = data else { return }
-            if let categoriesData = try? JSONDecoder().decode(CategoriesData.self, from: data) {
-                completion(.success(categoriesData))
-            }
+        guard let url = URL(string: "\(Resources.URL.mainNetworkRequestURL)") else {
+            completion(.failure(NetworkError.invalidURL))
+            return
         }
-        task.resume()
+        
+        let request = URLRequest(url: url)
+        
+        DispatchQueue.global().async {
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let data = data else {
+                    completion(.failure(NetworkError.noData))
+                    return
+                }
+                
+                do {
+                    let categoriesData = try JSONDecoder().decode(CategoriesData.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(.success(categoriesData))
+                    }
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
     }
 }
